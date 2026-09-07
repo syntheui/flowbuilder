@@ -149,7 +149,28 @@
     z-index:2;
   }
   .node.dragging{ cursor:grabbing; box-shadow:0 8px 22px rgba(20,20,22,.18); z-index:10; }
-  .node.pending{ border-color:var(--accent-blue); box-shadow:0 0 0 3px var(--accent-blue-soft); }
+  .node.pending{ border-color:var(--accent-blue); box-shadow:0 0 0 3px var(--accent-blue-soft); animation:pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 3px var(--accent-blue-soft); } 50%{ box-shadow:0 0 0 6px var(--accent-blue-soft); } }
+  body.connect-mode .node{ cursor:crosshair; }
+  body.connect-mode .node .node-label{ cursor:crosshair; }
+
+  .toast{
+    position:fixed; left:22px; bottom:22px; z-index:60;
+    background:var(--hud-bg); color:#fff;
+    font-size:13px; font-weight:500;
+    padding:11px 12px 11px 16px; border-radius:9px;
+    display:flex; align-items:center; gap:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.22);
+    opacity:0; transform:translateY(8px);
+    pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .toast.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .toast-undo{
+    all:unset; cursor:pointer; color:#7db2ff; font-weight:700; font-size:12.5px;
+    padding:4px 8px; border-radius:5px;
+  }
+  .toast-undo:hover{ background:rgba(255,255,255,.1); }
   .node.start{ border-color:var(--ink); }
   .node-head{
     padding:9px 10px 5px;
@@ -173,7 +194,12 @@
     position:absolute; bottom:-7px; left:50%; transform:translateX(-50%);
     width:14px; height:14px; border-radius:50%;
     background:#fff; border:2px solid var(--accent-blue);
+    cursor:crosshair;
+    transition:transform .1s ease, box-shadow .1s ease;
   }
+  .node-port:hover{ transform:translateX(-50%) scale(1.35); box-shadow:0 0 0 5px var(--accent-blue-soft); }
+  .node.drop-target{ border-color:var(--accent-green); box-shadow:0 0 0 4px rgba(31,156,119,.22); }
+  .wire-preview{ stroke:var(--accent-blue); stroke-width:2; stroke-dasharray:5 4; fill:none; }
 
   .reference-panel{
     position:fixed;
@@ -213,6 +239,69 @@
   .ref-note{
     font-size:11px; color:var(--ink-faint); margin-top:4px; font-weight:400;
   }
+
+  .check-summary{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px; border-radius:9px; margin-bottom:16px;
+  }
+  .check-summary.ok{ background:#eaf7f1; border:1px solid #bfe6d5; }
+  .check-summary.warn{ background:#fff6ea; border:1px solid #f3ddac; }
+  .check-summary-icon{ font-size:18px; flex-shrink:0; }
+  .check-summary-text{ font-size:12.5px; font-weight:600; line-height:1.35; }
+
+  .check-row{
+    display:flex; gap:10px; padding:11px 0; border-bottom:1px solid #f0f0f2;
+  }
+  .check-row:last-child{ border-bottom:none; }
+  .check-row-icon{
+    flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff; margin-top:1px;
+  }
+  .check-row-icon.pass{ background:var(--accent-green); }
+  .check-row-icon.warn{ background:#e0a638; }
+  .check-row-icon.info{ background:var(--ink-faint); }
+  .check-row-body{ flex:1; min-width:0; }
+  .check-row-title{ font-size:12.5px; font-weight:600; }
+  .check-row-detail{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
+  .check-row-list{ font-size:11.5px; color:var(--ink-soft); margin:4px 0 0; padding-left:16px; }
+
+  .check-footer{
+    padding:14px 20px; border-top:1px solid var(--panel-border);
+  }
+
+  .ai-feedback-cta{
+    border:1.5px dashed var(--line); border-radius:10px; padding:14px;
+    margin-bottom:16px; text-align:center;
+  }
+  .ai-feedback-cta p{ font-size:12px; color:var(--ink-soft); margin:0 0 10px; line-height:1.45; }
+  .ai-feedback-block{
+    border-radius:10px; padding:14px; margin-bottom:16px;
+  }
+  .ai-feedback-block.solid{ background:#eaf7f1; border:1px solid #bfe6d5; }
+  .ai-feedback-block.needs_work{ background:#fff6ea; border:1px solid #f3ddac; }
+  .ai-feedback-block.off_track{ background:#fdf3f2; border:1px solid #f2c9c3; }
+  .ai-feedback-tag{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    display:inline-block; margin-bottom:8px;
+  }
+  .ai-feedback-summary{ font-size:12.5px; line-height:1.5; margin-bottom:10px; }
+  .ai-feedback-list-label{ font-size:11px; font-weight:700; margin:10px 0 4px; }
+  .ai-feedback-list{ font-size:12px; color:var(--ink-soft); margin:0; padding-left:18px; line-height:1.55; }
+  .ai-feedback-note{ font-size:10.5px; color:var(--ink-faint); margin-top:10px; }
+  .ai-spinner{
+    display:inline-block; width:14px; height:14px; border-radius:50%;
+    border:2px solid #d7d9dc; border-top-color:var(--accent-blue);
+    animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .ai-feedback-error{ font-size:12px; color:var(--accent-red); line-height:1.5; }
+  .ai-feedback-used{
+    border:1.5px dashed var(--line); border-radius:10px; padding:14px;
+    margin-bottom:16px; text-align:center; background:#f4f4f5;
+  }
+  .ai-feedback-used p{ font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45; }
+  .ai-feedback-used-inline{ font-size:11.5px; color:var(--ink-faint); text-align:center; margin:0; }
 
   .empty-hint{
     position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
@@ -328,9 +417,15 @@
   <div class="toolbar-sep"></div>
   <button class="tbtn danger" id="clearBtn">Clear canvas</button>
   <div class="toolbar-sep"></div>
+  <button class="tbtn primary" id="checkBtn">✓ Check my flow</button>
   <button class="tbtn" id="refBtn">Reveal reference flow</button>
   <button class="tbtn" id="tutorialBtn" title="Replay tutorial (?)">🎓 Tutorial</button>
-  <span class="toolbar-hint" id="hintText">Drag steps to arrange · click a step's label to rename it · click a connector to delete it</span>
+  <span class="toolbar-hint" id="hintText">Drag steps to arrange · drag from the blue dot to connect · click a connector to delete it</span>
+</div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button class="toast-undo" id="toastUndoBtn">Undo</button>
 </div>
 
 <div class="shortcuts-bar" id="shortcutsBar">
@@ -338,6 +433,7 @@
   <span class="shortcut"><span class="kbd">N</span> Add step</span>
   <span class="shortcut"><span class="kbd">C</span> Connect mode</span>
   <span class="shortcut"><span class="kbd">Del</span> Delete selected</span>
+  <span class="shortcut"><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> Undo</span>
   <span class="shortcut"><span class="kbd">Esc</span> Cancel</span>
   <span class="shortcut"><span class="kbd">←</span><span class="kbd">→</span> Prev / next stage</span>
   <span class="shortcut"><span class="kbd">?</span> Tutorial</span>
@@ -363,6 +459,18 @@
     <p id="refIntro">One reasonable solution for "Reset your password." Compare it to what you built — yours doesn't need to match exactly, but check the branch for a wrong email.</p>
   </div>
   <div class="ref-body" id="refBody"></div>
+</div>
+
+<div class="reference-panel" id="checkPanel">
+  <button class="ref-close" id="checkClose">✕</button>
+  <div class="ref-header">
+    <h3>Flow check</h3>
+    <p>An automated check — it verifies your steps connect properly, flags placeholder or unclear labels, and checks your wording relates to this scenario. It still can't judge whether your UX reasoning is actually good; use it alongside the reference flow for that.</p>
+  </div>
+  <div class="ref-body" id="checkBody"></div>
+  <div class="check-footer">
+    <button class="tbtn" id="checkToRefBtn" style="width:100%; justify-content:center;">Compare with reference flow →</button>
+  </div>
 </div>
 
 <div class="tut-overlay" id="tutOverlay">
@@ -712,6 +820,7 @@ let nodeIdSeq = 1;
 let connectMode = false;
 let pendingFrom = null;
 let dragState = null;
+let wireDrag = null;
 let currentScenario = 'reset-password';
 let selectedNodeId = null;
 
@@ -719,6 +828,52 @@ const STAGE_IDS = Object.keys(SCENARIOS);
 let currentStageIndex = STAGE_IDS.indexOf(currentScenario);
 
 function uid(){ return 'n' + (nodeIdSeq++); }
+
+let history = [];
+let toastTimer = null;
+
+function pushHistory(action){
+  history.push(action);
+  if(history.length > 20) history.shift();
+}
+
+function showToast(msg, canUndo){
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastUndoBtn').style.display = canUndo ? '' : 'none';
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+function hideToast(){
+  document.getElementById('toast').classList.remove('show');
+  clearTimeout(toastTimer);
+}
+
+function undo(){
+  const action = history.pop();
+  if(!action){ showToast('Nothing to undo', false); return; }
+  hideToast();
+  if(action.type === 'delete-node'){
+    nodes.push(action.node);
+    renderNode(action.node);
+    action.relatedEdges.forEach(e => edges.push(e));
+    drawEdges();
+    toggleEmptyHint();
+  } else if(action.type === 'delete-edge'){
+    edges.splice(action.index, 0, action.edge);
+    drawEdges();
+  } else if(action.type === 'clear'){
+    nodes = action.nodes;
+    edges = action.edges;
+    nodes.forEach(n => renderNode(n));
+    drawEdges();
+    toggleEmptyHint();
+  }
+}
+
+document.getElementById('toastUndoBtn').addEventListener('click', undo);
 
 function selectNode(id){
   clearSelection();
@@ -784,8 +939,11 @@ function loadScenario(id){
   document.getElementById('hudScenario').innerHTML = s.hud;
   renderReferencePanel(id);
   document.getElementById('refPanel').classList.remove('show');
+  document.getElementById('checkPanel').classList.remove('show');
 
   nodes = []; edges = []; nodeIdSeq = 1; pendingFrom = null; selectedNodeId = null;
+  history = [];
+  hideToast();
   document.querySelectorAll('.node').forEach(n => n.remove());
   drawEdges();
   addNode(60, 60, s.seedLabel);
@@ -858,6 +1016,13 @@ function renderNode(n){
     if(e.target.closest('.node-del')) return;
     handleConnectClick(n.id, el);
   });
+
+  el.querySelector('.node-port').addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    wireDrag = { fromId: n.id, toEl: null };
+    document.getElementById('hintText').textContent = 'Drop on the step this flow leads to…';
+  });
 }
 
 function handleConnectClick(id, el){
@@ -870,15 +1035,24 @@ function handleConnectClick(id, el){
     pendingFrom = null;
     document.getElementById('hintText').textContent = 'Click a step to start a connection.';
   } else {
-    edges.push({ from: pendingFrom, to: id });
+    const alreadyExists = edges.some(e => e.from === pendingFrom && e.to === id);
     document.querySelector(`.node[data-id="${pendingFrom}"]`).classList.remove('pending');
-    pendingFrom = null;
-    document.getElementById('hintText').textContent = 'Connected. Click a step to start another connection.';
-    drawEdges();
+    if(alreadyExists){
+      pendingFrom = null;
+      document.getElementById('hintText').textContent = 'Those steps are already connected. Click a step to start another connection.';
+    } else {
+      edges.push({ from: pendingFrom, to: id });
+      pendingFrom = null;
+      document.getElementById('hintText').textContent = 'Connected. Click a step to start another connection.';
+      drawEdges();
+    }
   }
 }
 
 function removeNode(id){
+  const removedNode = nodes.find(n => n.id === id);
+  if(!removedNode) return;
+  const relatedEdges = edges.filter(e => e.from === id || e.to === id);
   nodes = nodes.filter(n => n.id !== id);
   edges = edges.filter(e => e.from !== id && e.to !== id);
   const el = document.querySelector(`.node[data-id="${id}"]`);
@@ -886,6 +1060,8 @@ function removeNode(id){
   if(selectedNodeId === id) selectedNodeId = null;
   drawEdges();
   toggleEmptyHint();
+  pushHistory({ type: 'delete-node', node: removedNode, relatedEdges });
+  showToast(`Deleted "${removedNode.label}"`, true);
 }
 
 function nodeCenter(n, side){
@@ -924,30 +1100,84 @@ function drawEdges(){
     g.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const idx = Number(g.dataset.edgeIndex);
-      edges.splice(idx, 1);
+      const [removedEdge] = edges.splice(idx, 1);
       drawEdges();
+      if(removedEdge){
+        pushHistory({ type: 'delete-edge', edge: removedEdge, index: idx });
+        showToast('Connection removed', true);
+      }
     });
   });
 }
 
 document.addEventListener('mousemove', (e) => {
-  if(!dragState) return;
-  const stageRect = canvasInner.getBoundingClientRect();
-  const n = nodes.find(n => n.id === dragState.id);
-  n.x = Math.max(0, e.clientX - stageRect.left - dragState.offsetX);
-  n.y = Math.max(0, e.clientY - stageRect.top - dragState.offsetY);
-  const el = document.querySelector(`.node[data-id="${n.id}"]`);
-  el.style.left = n.x + 'px';
-  el.style.top = n.y + 'px';
-  drawEdges();
+  if(dragState){
+    const stageRect = canvasInner.getBoundingClientRect();
+    const n = nodes.find(n => n.id === dragState.id);
+    n.x = Math.max(0, e.clientX - stageRect.left - dragState.offsetX);
+    n.y = Math.max(0, e.clientY - stageRect.top - dragState.offsetY);
+    const el = document.querySelector(`.node[data-id="${n.id}"]`);
+    el.style.left = n.x + 'px';
+    el.style.top = n.y + 'px';
+    drawEdges();
+    return;
+  }
+  if(wireDrag){
+    const stageRect = canvasInner.getBoundingClientRect();
+    const fromNode = nodes.find(n => n.id === wireDrag.fromId);
+    const p1 = nodeCenter(fromNode, 'bottom');
+    const mx = e.clientX - stageRect.left;
+    const my = e.clientY - stageRect.top;
+    let preview = svg.querySelector('.wire-preview');
+    if(!preview){
+      preview = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      preview.setAttribute('class', 'wire-preview');
+      svg.appendChild(preview);
+    }
+    const midY = (p1.y + my) / 2;
+    preview.setAttribute('d', `M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${mx} ${midY}, ${mx} ${my}`);
+
+    const hoverEl = document.elementFromPoint(e.clientX, e.clientY);
+    const hoverNode = hoverEl ? hoverEl.closest('.node') : null;
+    document.querySelectorAll('.node.drop-target').forEach(x => x.classList.remove('drop-target'));
+    if(hoverNode && hoverNode.dataset.id !== wireDrag.fromId){
+      hoverNode.classList.add('drop-target');
+      wireDrag.toEl = hoverNode;
+    } else {
+      wireDrag.toEl = null;
+    }
+  }
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (e) => {
   if(dragState){
     const el = document.querySelector(`.node[data-id="${dragState.id}"]`);
     if(el) el.classList.remove('dragging');
   }
   dragState = null;
+
+  if(wireDrag){
+    const preview = svg.querySelector('.wire-preview');
+    if(preview) preview.remove();
+    document.querySelectorAll('.node.drop-target').forEach(x => x.classList.remove('drop-target'));
+
+    if(wireDrag.toEl){
+      const toId = wireDrag.toEl.dataset.id;
+      const alreadyExists = edges.some(ed => ed.from === wireDrag.fromId && ed.to === toId);
+      if(alreadyExists){
+        document.getElementById('hintText').textContent = 'Those steps are already connected.';
+      } else {
+        edges.push({ from: wireDrag.fromId, to: toId });
+        drawEdges();
+        document.getElementById('hintText').textContent = 'Connected. Drag from a dot to connect another step.';
+      }
+    } else {
+      document.getElementById('hintText').textContent = connectMode
+        ? 'Click a step to start a connection.'
+        : 'Drag steps to arrange · drag from the blue dot to connect · click a connector to delete it';
+    }
+    wireDrag = null;
+  }
 });
 
 document.getElementById('addNodeBtn').addEventListener('click', () => {
@@ -959,12 +1189,13 @@ document.getElementById('addNodeBtn').addEventListener('click', () => {
 
 document.getElementById('connectBtn').addEventListener('click', () => {
   connectMode = !connectMode;
+  document.body.classList.toggle('connect-mode', connectMode);
   const btn = document.getElementById('connectBtn');
   btn.classList.toggle('active', connectMode);
   btn.textContent = connectMode ? 'Connecting…' : 'Connect steps';
   document.getElementById('hintText').textContent = connectMode
     ? 'Click a step to start a connection.'
-    : 'Drag steps to arrange · click a step\'s label to rename it · click a connector to delete it';
+    : 'Drag steps to arrange · drag from the blue dot to connect · click a connector to delete it';
   if(!connectMode && pendingFrom){
     const el = document.querySelector(`.node[data-id="${pendingFrom}"]`);
     if(el) el.classList.remove('pending');
@@ -973,16 +1204,26 @@ document.getElementById('connectBtn').addEventListener('click', () => {
 });
 
 document.getElementById('clearBtn').addEventListener('click', () => {
+  if(!nodes.length && !edges.length) return;
   if(!confirm('Clear everything on the canvas?')) return;
-  nodes = []; edges = []; nodeIdSeq = 1; pendingFrom = null; selectedNodeId = null;
+  const prevNodes = nodes, prevEdges = edges;
+  nodes = []; edges = []; pendingFrom = null; selectedNodeId = null;
   document.querySelectorAll('.node').forEach(n => n.remove());
   drawEdges();
   toggleEmptyHint();
+  pushHistory({ type: 'clear', nodes: prevNodes, edges: prevEdges });
+  showToast('Canvas cleared', true);
 });
 
 document.getElementById('stage').addEventListener('mousedown', (e) => {
   if(e.target.id === 'stage' || e.target.id === 'canvasInner'){
     clearSelection();
+    if(connectMode && pendingFrom){
+      const el = document.querySelector(`.node[data-id="${pendingFrom}"]`);
+      if(el) el.classList.remove('pending');
+      pendingFrom = null;
+      document.getElementById('hintText').textContent = 'Click a step to start a connection.';
+    }
   }
 });
 
@@ -995,7 +1236,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  if(e.key === 'n' || e.key === 'N'){
+  if((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')){
+    e.preventDefault();
+    undo();
+  } else if(e.key === 'n' || e.key === 'N'){
     e.preventDefault();
     document.getElementById('addNodeBtn').click();
   } else if(e.key === 'c' || e.key === 'C'){
@@ -1023,8 +1267,9 @@ const TUTORIAL_STEPS = [
   { target: null, title: 'Welcome to Flow Builder', text: 'Each scenario is a real product moment. Your job: map how a user gets from start to finish, one step at a time.' },
   { target: '#addNodeBtn', title: 'Add a step', text: 'Click "+ Add step" (or press N) to drop a new screen onto the canvas.', placement: 'bottom' },
   { target: '.node[data-id="n1"]', title: 'Arrange your steps', text: 'Drag steps to position them anywhere on the canvas. Click a step\u2019s label to rename it.', placement: 'right' },
-  { target: '#connectBtn', title: 'Connect steps', text: 'Toggle connect mode (or press C), then click one step and the step it leads to, to draw an arrow between them.', placement: 'bottom' },
-  { target: '#refBtn', title: 'Check your work', text: 'Reveal the reference flow any time to compare it with what you\u2019ve built \u2014 yours doesn\u2019t need to match exactly.', placement: 'bottom' },
+  { target: '.node[data-id="n1"] .node-port', title: 'Connect steps', text: 'Drag from the blue dot at the bottom of a step to the step it leads to, to draw an arrow between them. (Or toggle "Connect steps"/press C to click-connect instead.)', placement: 'bottom' },
+  { target: '#checkBtn', title: 'Check your flow', text: 'Once you\u2019ve mapped it out, check here \u2014 it looks at whether every step connects, whether you\u2019ve handled a branch, and flags anything worth a second look.', placement: 'bottom' },
+  { target: '#refBtn', title: 'Compare to a reference', text: 'Reveal the reference flow any time to compare it with what you\u2019ve built \u2014 yours doesn\u2019t need to match exactly.', placement: 'bottom' },
   { target: '#clearBtn', title: 'Start over', text: 'Clear the canvas to try the scenario again from scratch.', placement: 'bottom' },
   { target: '#stageNav', title: 'Move between stages', text: 'Use the \u2039 \u203a arrows (or \u2190 \u2192) to work through every challenge in order, or jump straight to one with the dropdown.', placement: 'bottom' },
   { target: '#shortcutsBar', title: 'Keyboard shortcuts', text: 'These speed things up once you\u2019re used to the tool. Select a step and press Delete to remove it. Press ? any time to replay this tutorial.', placement: 'top' }
@@ -1096,10 +1341,299 @@ document.getElementById('tutSkip').addEventListener('click', endTutorial);
 document.getElementById('tutorialBtn').addEventListener('click', startTutorial);
 
 document.getElementById('refBtn').addEventListener('click', () => {
+  document.getElementById('checkPanel').classList.remove('show');
   document.getElementById('refPanel').classList.add('show');
 });
 document.getElementById('refClose').addEventListener('click', () => {
   document.getElementById('refPanel').classList.remove('show');
+});
+
+const CONTENT_STOPWORDS = new Set(['the','a','an','and','or','to','for','in','on','of','with','your','you','is','it','back','new','option','app','any','allow','offer','instead','screen','page','step','onto','from','into','this','that','their','user','users','just','don\u2019t','wasn\u2019t','doesn\u2019t','isn\u2019t']);
+
+function extractKeywords(text){
+  return (text || '').toLowerCase().match(/[a-z']{4,}/g)?.filter(w => !CONTENT_STOPWORDS.has(w)) || [];
+}
+
+function scenarioVocabulary(s){
+  const words = new Set();
+  s.ref.forEach(r => {
+    extractKeywords(r.text).forEach(w => words.add(w));
+    extractKeywords(r.note).forEach(w => words.add(w));
+  });
+  return words;
+}
+
+function runFlowCheck(){
+  const s = SCENARIOS[currentScenario];
+  const rows = [];
+  let warnCount = 0;
+
+  // Connectivity: reachable set from the start node via outgoing edges
+  const startId = nodes[0] ? nodes[0].id : null;
+  const reachable = new Set();
+  if(startId){
+    const queue = [startId];
+    reachable.add(startId);
+    while(queue.length){
+      const cur = queue.shift();
+      edges.filter(e => e.from === cur).forEach(e => {
+        if(!reachable.has(e.to)){ reachable.add(e.to); queue.push(e.to); }
+      });
+    }
+  }
+  const orphans = nodes.filter(n => n.id !== startId && !reachable.has(n.id));
+  if(orphans.length){
+    warnCount++;
+    rows.push({ level:'warn', title:'Some steps aren\u2019t connected to the flow',
+      detail:'These steps exist on the canvas but can\u2019t be reached by following connections from your first step:',
+      list: orphans.map(n => n.label) });
+  } else if(nodes.length > 1){
+    rows.push({ level:'pass', title:'Every step is reachable', detail:'Your whole flow connects back to the first step \u2014 no islands.' });
+  }
+
+  // Dead ends: steps with no outgoing connection
+  const deadEnds = nodes.filter(n => !edges.some(e => e.from === n.id));
+  if(deadEnds.length > 1){
+    warnCount++;
+    rows.push({ level:'warn', title:`${deadEnds.length} steps have no outgoing connection`,
+      detail:'That\u2019s fine for a true finishing screen, but worth double-checking these aren\u2019t just unfinished:',
+      list: deadEnds.map(n => n.label) });
+  } else if(deadEnds.length === 1){
+    rows.push({ level:'pass', title:'Flow ends cleanly', detail:`"${deadEnds[0].label}" is your only step with no next connection \u2014 a natural finish line.` });
+  }
+
+  // Branching: does the reference expect a branch, and does the user have one?
+  const refHasBranch = s.ref.some(r => r.branch);
+  const hasBranch = nodes.some(n => edges.filter(e => e.from === n.id).length >= 2);
+  if(refHasBranch && !hasBranch){
+    warnCount++;
+    rows.push({ level:'warn', title:'No branch point yet',
+      detail:'This scenario usually needs an edge case handled (an error, a wrong entry, an alternate path) \u2014 a step with two or more outgoing connections. You don\u2019t have one yet.' });
+  } else if(hasBranch){
+    rows.push({ level:'pass', title:'You\u2019ve got a branch point', detail:'At least one step leads to more than one next step \u2014 good sign you\u2019re handling an edge case.' });
+  }
+
+  // --- Content sanity: catches placeholder / gibberish / off-topic labels ---
+  // (This is a heuristic, not real grading \u2014 it can't judge whether your
+  // wording or UX reasoning is actually good, only whether you clearly tried.)
+  const placeholderLabels = nodes.filter(n => /^(new step|untitled step)$/i.test(n.label.trim()));
+  if(placeholderLabels.length){
+    warnCount++;
+    rows.push({ level:'warn', title:`${placeholderLabels.length} step${placeholderLabels.length===1?'':'s'} never got renamed`,
+      detail:'These are still using the default placeholder name \u2014 give them a real screen name:',
+      list: placeholderLabels.map(n => `"${n.label}" (step ${n.id.replace('n','')})`) });
+  }
+
+  const unclearLabels = nodes.filter(n => {
+    const t = n.label.trim();
+    return t.length > 0 && (t.length < 3 || !/[aeiouAEIOU]/.test(t));
+  });
+  if(unclearLabels.length){
+    warnCount++;
+    rows.push({ level:'warn', title:`${unclearLabels.length} label${unclearLabels.length===1?' is':'s are'} too short to mean anything`,
+      detail:'These don\u2019t read as real screen names \u2014 worth a second pass:',
+      list: unclearLabels.map(n => `"${n.label}"`) });
+  }
+
+  if(nodes.length >= 2){
+    const vocab = scenarioVocabulary(s);
+    const relevantNodes = nodes.filter(n => extractKeywords(n.label).some(w => vocab.has(w)));
+    const ratio = relevantNodes.length / nodes.length;
+    if(ratio === 0){
+      warnCount++;
+      rows.push({ level:'warn', title:'None of your step names relate to this scenario',
+        detail:`Nothing in your flow shares wording with "${s.hud.replace(/<[^>]+>/g,'')}" \u2014 double check you\u2019re describing screens for this scenario, not placeholder or unrelated text.` });
+    } else if(ratio < 0.34){
+      warnCount++;
+      rows.push({ level:'warn', title:'Most steps don\u2019t look tied to this scenario',
+        detail:`Only ${relevantNodes.length} of ${nodes.length} step names share any wording with this scenario\u2019s context. That can be fine if you\u2019re using different words for the same idea \u2014 just worth double-checking.` });
+    } else {
+      rows.push({ level:'pass', title:'Your step names track the scenario', detail:'Most of your labels share vocabulary with what this scenario is about.' });
+    }
+  }
+
+  // Informational step-count comparison
+  rows.push({ level:'info', title:'Step count',
+    detail:`You have ${nodes.length} step${nodes.length===1?'':'s'} \u00b7 the reference flow has ${s.ref.length}. This is just context \u2014 fewer or more can both be reasonable.` });
+
+  if(nodes.length <= 1){
+    warnCount++;
+    rows.unshift({ level:'warn', title:'Your flow is basically empty', detail:'Add a few more steps and connect them before checking.' });
+  }
+
+  return { rows, warnCount };
+}
+
+// ---------- AI-graded feedback (via /api/feedback proxy) ----------
+// The Groq key now lives only in the server's environment variables
+// (see /api/feedback.js) — nothing secret ships to the browser.
+// Each visitor gets ONE AI grading per mission/scenario, tracked in
+// localStorage so it survives reloads. A failed request (network error,
+// server not configured, etc.) does NOT use up the mission's attempt.
+const AI_USED_KEY = 'flowbuilder_ai_used_v1';
+
+function getUsedMissions(){
+  try{ return JSON.parse(localStorage.getItem(AI_USED_KEY) || '{}'); }catch(_){ return {}; }
+}
+function markMissionUsed(scenarioId){
+  const used = getUsedMissions();
+  used[scenarioId] = true;
+  try{ localStorage.setItem(AI_USED_KEY, JSON.stringify(used)); }catch(_){}
+}
+function isMissionUsed(scenarioId){
+  return !!getUsedMissions()[scenarioId];
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function callFeedbackApi(systemPrompt, userPrompt, opts = {}){
+  let res;
+  try{
+    res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        userPrompt,
+        jsonMode: !!opts.jsonMode,
+        temperature: opts.temperature ?? 0.4,
+        maxTokens: opts.maxTokens ?? 700
+      })
+    });
+  }catch(networkErr){
+    throw new Error('Network error reaching the AI feedback service.');
+  }
+  const data = await res.json().catch(() => null);
+  if(!res.ok){
+    throw new Error(data?.error || `Request failed (${res.status})`);
+  }
+  if(!data?.text) throw new Error('Empty response from the model.');
+  return data.text;
+}
+
+function aiFeedbackSectionHtml(){
+  if(isMissionUsed(currentScenario)){
+    return `<div class="ai-feedback-used"><p>🔒 You've already used your one AI grading for this mission.</p></div>
+      <div id="aiFeedbackResult"></div>`;
+  }
+  return `<div class="ai-feedback-cta" id="aiFeedbackCta">
+      <p>Get your flow graded against the reference for content and reasoning, not just structure. You get <b>one AI grading per mission</b>, so make sure your flow is ready before you use it.</p>
+      <button class="tbtn primary" id="getAiFeedbackBtn">🤖 Get AI feedback</button>
+    </div>
+    <div id="aiFeedbackResult"></div>`;
+}
+
+function wireAiFeedbackSection(){
+  const getBtn = document.getElementById('getAiFeedbackBtn');
+  if(getBtn) getBtn.addEventListener('click', fetchAiFeedback);
+}
+
+async function fetchAiFeedback(){
+  const scenarioId = currentScenario;
+  if(isMissionUsed(scenarioId)){
+    renderCheckPanel();
+    return;
+  }
+
+  const cta = document.getElementById('aiFeedbackCta');
+  const resultEl = document.getElementById('aiFeedbackResult');
+  cta.innerHTML = `<p><span class="ai-spinner"></span>Grading your flow…</p>`;
+
+  try{
+    const s = SCENARIOS[scenarioId];
+    const scenarioText = s.hud.replace(/<[^>]+>/g, '');
+    const refText = s.ref.map((r, i) => `${i + 1}. ${r.text}${r.note ? ' \u2014 ' + r.note : ''}${r.branch ? ' [handles an edge case / branch]' : ''}${r.end ? ' [end of flow]' : ''}`).join('\n');
+    const flowText = nodes.length
+      ? `Steps:\n${nodes.map(n => `- "${n.label}"`).join('\n')}\n\nConnections:\n${edges.length ? edges.map(e => {
+          const f = nodes.find(x => x.id === e.from), t = nodes.find(x => x.id === e.to);
+          return `"${f ? f.label : '?'}" -> "${t ? t.label : '?'}"`;
+        }).join('\n') : '(none)'}`
+      : '(The learner has not added any steps.)';
+
+    const systemPrompt = 'You are a supportive but honest UX mentor grading a learner\u2019s user-flow-diagram exercise. ' +
+      'You are given a scenario prompt, one reasonable reference solution (not the only correct answer), and the learner\u2019s own flow as a list of steps and directed connections. ' +
+      'Judge it on content and reasoning: does it plausibly solve the stated scenario, does it cover the key moments a real solution needs (especially any edge case or branch the reference calls out), and is the sequence logical? ' +
+      'The learner\u2019s wording never needs to match the reference \u2014 different words for the same idea are fine. Be encouraging but honest; if the flow is empty, off-topic, or nonsensical, say so plainly. ' +
+      'Respond ONLY with a JSON object, no markdown fences, no preamble, matching exactly this shape: ' +
+      '{"verdict": "solid" | "needs_work" | "off_track", "summary": "1-2 sentence overall take", "strengths": ["short phrase", ...up to 3], "gaps": ["short phrase", ...up to 4]}';
+
+    const userPrompt = `Scenario: ${scenarioText}\n\nReference solution:\n${refText}\n\nLearner's flow:\n${flowText}`;
+
+    let raw;
+    try{
+      raw = await callFeedbackApi(systemPrompt, userPrompt, { jsonMode: true, maxTokens: 700, temperature: 0.4 });
+    }catch(err){
+      if(/response_format|json_object|json_schema/i.test(err.message)){
+        raw = await callFeedbackApi(systemPrompt + ' Return raw JSON text only \u2014 no code fences, no commentary before or after it.', userPrompt, { jsonMode: false, maxTokens: 700, temperature: 0.4 });
+      } else {
+        throw err;
+      }
+    }
+
+    let parsed;
+    try{
+      parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    }catch(e){
+      throw new Error('Got a response but couldn\u2019t parse it as JSON.');
+    }
+
+    const verdict = ['solid', 'needs_work', 'off_track'].includes(parsed.verdict) ? parsed.verdict : 'needs_work';
+    const verdictLabel = { solid: '✅ Solid', needs_work: '⚠️ Needs work', off_track: '🚫 Off track' }[verdict];
+
+    // Only now — once we actually have a usable result — spend the mission's one attempt.
+    markMissionUsed(scenarioId);
+
+    resultEl.innerHTML = `
+      <div class="ai-feedback-block ${verdict}">
+        <div class="ai-feedback-tag">${verdictLabel}</div>
+        <div class="ai-feedback-summary">${escapeHtml(parsed.summary || '')}</div>
+        ${Array.isArray(parsed.strengths) && parsed.strengths.length ? `<div class="ai-feedback-list-label">What's working</div><ul class="ai-feedback-list">${parsed.strengths.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : ''}
+        ${Array.isArray(parsed.gaps) && parsed.gaps.length ? `<div class="ai-feedback-list-label">Worth addressing</div><ul class="ai-feedback-list">${parsed.gaps.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : ''}
+        <div class="ai-feedback-note">AI-generated feedback \u2014 use your own judgment too. You've used this mission's one AI grading.</div>
+      </div>`;
+    cta.innerHTML = `<p class="ai-feedback-used-inline">🔒 One AI grading per mission \u2014 already used for this one.</p>`;
+  }catch(err){
+    // Request failed before we got a usable result, so it doesn't count against the mission's limit.
+    cta.innerHTML = `<p class="ai-feedback-error">Couldn\u2019t get AI feedback: ${escapeHtml(err.message)}</p><button class="tbtn" id="getAiFeedbackBtn">Try again</button>`;
+    document.getElementById('getAiFeedbackBtn').addEventListener('click', fetchAiFeedback);
+  }
+}
+
+function renderCheckPanel(){
+  const { rows, warnCount } = runFlowCheck();
+  const body = document.getElementById('checkBody');
+  const summaryHtml = warnCount === 0
+    ? `<div class="check-summary ok"><span class="check-summary-icon">✅</span><span class="check-summary-text">Structurally solid \u2014 everything connects and reaches an end.</span></div>`
+    : `<div class="check-summary warn"><span class="check-summary-icon">⚠️</span><span class="check-summary-text">${warnCount} thing${warnCount===1?'':'s'} worth a second look before you compare to the reference.</span></div>`;
+
+  const rowsHtml = rows.map(r => `
+    <div class="check-row">
+      <div class="check-row-icon ${r.level}">${r.level === 'pass' ? '✓' : r.level === 'warn' ? '!' : 'i'}</div>
+      <div class="check-row-body">
+        <div class="check-row-title">${r.title}</div>
+        <div class="check-row-detail">${r.detail}</div>
+        ${r.list ? `<ul class="check-row-list">${r.list.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}
+      </div>
+    </div>`).join('');
+
+  const aiHtml = aiFeedbackSectionHtml();
+  body.innerHTML = summaryHtml + rowsHtml + (aiHtml ? '<div style="height:4px"></div>' + aiHtml : '');
+  wireAiFeedbackSection();
+}
+
+document.getElementById('checkBtn').addEventListener('click', () => {
+  document.getElementById('refPanel').classList.remove('show');
+  renderCheckPanel();
+  document.getElementById('checkPanel').classList.add('show');
+});
+document.getElementById('checkClose').addEventListener('click', () => {
+  document.getElementById('checkPanel').classList.remove('show');
+});
+document.getElementById('checkToRefBtn').addEventListener('click', () => {
+  document.getElementById('checkPanel').classList.remove('show');
+  document.getElementById('refPanel').classList.add('show');
 });
 
 // initialize with the first scenario
