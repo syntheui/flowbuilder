@@ -127,6 +127,15 @@
   .canvas-inner{ position:relative; width:1400px; height:900px; }
 
   svg.edges{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+  svg.edges .edge-hit{ cursor:pointer; pointer-events:stroke; }
+  svg.edges .edge-hit:hover ~ .edge-line,
+  svg.edges .edge-group:hover .edge-line{ stroke:var(--accent-red); }
+  svg.edges .edge-group:hover .edge-del-bg{ opacity:1; }
+  .edge-del-bg{ opacity:0; transition:opacity .1s ease; }
+  .edge-del-x{
+    font-family:'Inter',sans-serif; font-size:11px; font-weight:700;
+    fill:#fff; pointer-events:none; user-select:none;
+  }
 
   .node{
     position:absolute;
@@ -321,7 +330,7 @@
   <div class="toolbar-sep"></div>
   <button class="tbtn" id="refBtn">Reveal reference flow</button>
   <button class="tbtn" id="tutorialBtn" title="Replay tutorial (?)">🎓 Tutorial</button>
-  <span class="toolbar-hint" id="hintText">Drag steps to arrange · click a step's label to rename it</span>
+  <span class="toolbar-hint" id="hintText">Drag steps to arrange · click a step's label to rename it · click a connector to delete it</span>
 </div>
 
 <div class="shortcuts-bar" id="shortcutsBar">
@@ -887,22 +896,38 @@ function nodeCenter(n, side){
 }
 
 function drawEdges(){
-  const paths = edges.map(e => {
+  const groups = edges.map((e, i) => {
     const from = nodes.find(n => n.id === e.from);
     const to = nodes.find(n => n.id === e.to);
     if(!from || !to) return '';
     const p1 = nodeCenter(from, 'bottom');
     const p2 = nodeCenter(to, 'top');
     const midY = (p1.y + p2.y) / 2;
-    return `<path d="M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}"
-              fill="none" stroke="#1b6bff" stroke-width="2" marker-end="url(#arrowhead)" />`;
+    const d = `M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}`;
+    const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+    return `<g class="edge-group" data-edge-index="${i}" pointer-events="visible-painted">
+        <path class="edge-line" d="${d}" fill="none" stroke="#1b6bff" stroke-width="2" marker-end="url(#arrowhead)" pointer-events="none"></path>
+        <path class="edge-hit" d="${d}" fill="none" stroke="transparent" stroke-width="16" pointer-events="stroke"></path>
+        <circle class="edge-del-bg" cx="${mx}" cy="${my}" r="9" fill="var(--accent-red)" pointer-events="none"></circle>
+        <text class="edge-del-x" x="${mx}" y="${my + 3.5}" text-anchor="middle">✕</text>
+      </g>`;
   }).join('');
   svg.innerHTML = `
     <defs>
       <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
         <path d="M0,0 L6,3 L0,6 Z" fill="#1b6bff"></path>
       </marker>
-    </defs>${paths}`;
+    </defs>${groups}`;
+
+  svg.querySelectorAll('.edge-group').forEach(g => {
+    g.style.pointerEvents = 'visiblePainted';
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const idx = Number(g.dataset.edgeIndex);
+      edges.splice(idx, 1);
+      drawEdges();
+    });
+  });
 }
 
 document.addEventListener('mousemove', (e) => {
@@ -939,7 +964,7 @@ document.getElementById('connectBtn').addEventListener('click', () => {
   btn.textContent = connectMode ? 'Connecting…' : 'Connect steps';
   document.getElementById('hintText').textContent = connectMode
     ? 'Click a step to start a connection.'
-    : 'Drag steps to arrange · click a step\'s label to rename it';
+    : 'Drag steps to arrange · click a step\'s label to rename it · click a connector to delete it';
   if(!connectMode && pendingFrom){
     const el = document.querySelector(`.node[data-id="${pendingFrom}"]`);
     if(el) el.classList.remove('pending');
