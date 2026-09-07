@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Flow Builder</title>
+<meta name="description" content="Build a node-and-arrow user flow across 25 real-world scenarios, then compare each to a reference solution. Includes a built-in tutorial and stage-by-stage progression.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://flowbuilder.cc/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Flow Builder">
+<meta property="og:title" content="User Flow Builder">
+<meta property="og:description" content="Build a node-and-arrow user flow across 25 real-world scenarios, then compare each to a reference solution. Includes a built-in tutorial and stage-by-stage progression.">
+<meta property="og:url" content="https://flowbuilder.cc/">
+<meta property="og:image" content="https://flowbuilder.cc/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="User Flow Builder">
+<meta name="twitter:description" content="Build a node-and-arrow user flow across 25 real-world scenarios, then compare each to a reference solution. Includes a built-in tutorial and stage-by-stage progression.">
+<meta name="twitter:image" content="https://flowbuilder.cc/og-image.png">
+
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-canvas:#e4e5e8;
+    --dot:#c9cad0;
+    --panel-bg:#ffffff;
+    --panel-border:#dcdde1;
+    --ink:#1b1c1f;
+    --ink-soft:#6b6d74;
+    --ink-faint:#9a9ba2;
+    --accent-red:#e3402d;
+    --accent-blue:#1b6bff;
+    --accent-blue-soft:#e4edff;
+    --accent-green:#1f9c77;
+    --line:#d2d3d7;
+    --hud-bg:#1b1c1f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0; height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    background:var(--bg-canvas);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+  .hud{
+    background:var(--hud-bg);
+    color:#fff;
+    padding:14px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    flex-shrink:0;
+  }
+  .hud-title{
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    font-size:18px;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .hud-title .stamp-mark{
+    background:var(--accent-blue);
+    color:#fff;
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:0.06em;
+    padding:3px 7px;
+    border-radius:3px;
+    transform:rotate(-3deg);
+    display:inline-block;
+  }
+  .hud-scenario{ font-size:12.5px; color:#a9aab0; max-width:420px; text-align:right; }
+  .hud-scenario b{ color:#fff; }
+
+  .toolbar{
+    background:#fff;
+    border-bottom:1px solid var(--panel-border);
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+    flex-wrap:wrap;
+  }
+  .tbtn{
+    all:unset; cursor:pointer;
+    font-family:'Archivo',sans-serif;
+    font-weight:700; font-size:12.5px;
+    padding:9px 14px; border-radius:7px;
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .tbtn:hover{ border-color:var(--ink); }
+  .tbtn.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .tbtn.active{ background:var(--accent-blue-soft); border-color:var(--accent-blue); color:#1546b8; }
+  .tbtn.danger:hover{ border-color:var(--accent-red); color:var(--accent-red); }
+  .toolbar-sep{ width:1px; height:22px; background:var(--line); margin:0 4px; }
+  .toolbar-hint{ font-size:12px; color:var(--ink-faint); margin-left:auto; }
+  .scenario-select{
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:12.5px;
+    padding:9px 30px 9px 14px; border-radius:7px; border:1.5px solid var(--line);
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0 L5 6 L10 0' fill='%236b6d74'/%3E%3C/svg%3E") no-repeat right 12px center;
+    appearance:none; -webkit-appearance:none; color:var(--ink); cursor:pointer;
+  }
+  .scenario-select:hover{ border-color:var(--ink); }
+
+  .stage{
+    position:relative;
+    flex:1;
+    overflow:auto;
+    background-color:var(--bg-canvas);
+    background-image:radial-gradient(var(--dot) 1.2px, transparent 1.2px);
+    background-size:22px 22px;
+  }
+  .canvas-inner{ position:relative; width:1400px; height:900px; }
+
+  svg.edges{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+
+  .node{
+    position:absolute;
+    width:168px;
+    background:#fff;
+    border:1.5px solid var(--panel-border);
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(20,20,22,.08);
+    cursor:grab;
+    user-select:none;
+    z-index:2;
+  }
+  .node.dragging{ cursor:grabbing; box-shadow:0 8px 22px rgba(20,20,22,.18); z-index:10; }
+  .node.pending{ border-color:var(--accent-blue); box-shadow:0 0 0 3px var(--accent-blue-soft); }
+  .node.start{ border-color:var(--ink); }
+  .node-head{
+    padding:9px 10px 5px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:6px;
+  }
+  .node-label{
+    font-size:12.5px; font-weight:600; line-height:1.3;
+    outline:none; flex:1; min-width:0; word-break:break-word;
+  }
+  .node-label:focus{ background:#f5f6f7; border-radius:4px; }
+  .node-del{
+    all:unset; cursor:pointer; color:var(--ink-faint); font-size:14px; line-height:1;
+    padding:2px 4px; border-radius:4px; flex-shrink:0;
+  }
+  .node-del:hover{ color:var(--accent-red); background:#fbe2df; }
+  .node-tag{
+    font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint);
+    padding:0 10px 9px;
+  }
+  .node-port{
+    position:absolute; bottom:-7px; left:50%; transform:translateX(-50%);
+    width:14px; height:14px; border-radius:50%;
+    background:#fff; border:2px solid var(--accent-blue);
+  }
+
+  .reference-panel{
+    position:fixed;
+    top:0; right:-420px;
+    width:400px; height:100%;
+    background:#fff;
+    border-left:1.5px solid var(--panel-border);
+    box-shadow:-8px 0 24px rgba(0,0,0,.08);
+    transition:right .25s ease;
+    z-index:40;
+    display:flex; flex-direction:column;
+  }
+  .reference-panel.show{ right:0; }
+  .ref-header{ padding:18px 20px; border-bottom:1px solid var(--panel-border); }
+  .ref-header h3{ font-family:'Archivo',sans-serif; font-size:15px; margin:0 0 4px; }
+  .ref-header p{ font-size:12px; color:var(--ink-soft); margin:0; }
+  .ref-body{ flex:1; overflow:auto; padding:20px; }
+  .ref-close{
+    all:unset; cursor:pointer; position:absolute; top:16px; right:16px;
+    font-size:18px; color:var(--ink-faint);
+  }
+
+  .ref-node{
+    background:#fafafa;
+    border:1.5px dashed var(--line);
+    border-radius:8px;
+    padding:9px 12px;
+    font-size:12.5px;
+    font-weight:600;
+    margin-bottom:8px;
+    position:relative;
+  }
+  .ref-node.branch{ border-color:var(--accent-red); background:#fdf3f2; }
+  .ref-arrow{
+    display:flex; justify-content:center; color:var(--ink-faint); font-size:14px; margin:-2px 0 6px;
+  }
+  .ref-note{
+    font-size:11px; color:var(--ink-faint); margin-top:4px; font-weight:400;
+  }
+
+  .empty-hint{
+    position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
+    text-align:center; color:var(--ink-faint); font-size:13px; pointer-events:none;
+  }
+  .empty-hint b{ display:block; font-family:'Archivo',sans-serif; font-size:16px; color:var(--ink-soft); margin-bottom:4px; }
+
+  .node.selected{ border-color:var(--accent-green); box-shadow:0 0 0 3px rgba(31,156,119,.18); }
+
+  .shortcuts-bar{
+    background:#fff; border-bottom:1px solid var(--panel-border);
+    padding:6px 20px; display:flex; align-items:center; gap:16px;
+    flex-wrap:wrap; flex-shrink:0;
+  }
+  .shortcut{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-soft); }
+  .kbd{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:20px; height:20px; padding:0 5px; background:#f2f3f5;
+    border:1px solid var(--line); border-radius:4px;
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:10.5px; color:var(--ink);
+  }
+  .shortcuts-bar-title{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-right:2px; }
+
+  .stage-nav{ display:flex; align-items:center; gap:6px; }
+  .stage-nav-btn{
+    all:unset; cursor:pointer; width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+    border:1.5px solid var(--line); border-radius:7px; font-weight:700; font-size:14px;
+  }
+  .stage-nav-btn:hover{ border-color:var(--ink); }
+  .stage-nav-btn:disabled{ opacity:.35; cursor:not-allowed; border-color:var(--line); }
+  .stage-label{ font-family:'Archivo',sans-serif; font-weight:700; font-size:11.5px; color:var(--ink-soft); white-space:nowrap; }
+
+  .tut-overlay{
+    position:fixed; inset:0; z-index:200; display:none;
+    background:rgba(15,16,18,.35);
+  }
+  .tut-overlay.show{ display:block; }
+  .tut-highlight{
+    position:relative !important; z-index:201 !important;
+    box-shadow:0 0 0 4px var(--accent-blue), 0 0 0 9999px rgba(15,16,18,.6) !important;
+    border-radius:10px;
+  }
+  .tut-tooltip{
+    position:fixed; width:280px; max-width:calc(100vw - 24px);
+    background:#fff; border-radius:12px; padding:16px;
+    box-shadow:0 14px 34px rgba(0,0,0,.28); z-index:202;
+  }
+  .tut-step-count{
+    font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--accent-blue); margin-bottom:6px;
+  }
+  .tut-tooltip h4{ font-family:'Archivo',sans-serif; font-size:14.5px; margin:0 0 6px; }
+  .tut-tooltip p{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:0 0 14px; }
+  .tut-actions{ display:flex; align-items:center; gap:8px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LearningResource",
+  "name": "User Flow Builder",
+  "description": "Build a node-and-arrow user flow across 25 real-world scenarios, then compare each to a reference solution. Includes a built-in tutorial and stage-by-stage progression.",
+  "url": "https://flowbuilder.cc/",
+  "learningResourceType": "Interactive Activity",
+  "educationalUse": "practice",
+  "isAccessibleForFree": true
+}
+</script>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-title"><span class="stamp-mark">FLOW</span><h1>User Flow Builder</h1></div>
+  <div class="hud-scenario" id="hudScenario">Scenario: <b>Map the flow for "Reset your password"</b> — from a logged-out user to being signed back in.</div>
+</div>
+
+<div class="toolbar">
+  <div class="stage-nav" id="stageNav">
+    <button class="stage-nav-btn" id="prevStageBtn" title="Previous stage (←)">‹</button>
+    <select class="scenario-select" id="scenarioSelect">
+      <option value="reset-password">Scenario: Reset your password</option>
+      <option value="onboarding">Scenario: Onboard a new user</option>
+      <option value="guest-checkout">Scenario: Buy a ticket as a guest</option>
+      <option value="report-bug">Scenario: Report a bug in-app</option>
+      <option value="cancel-subscription">Scenario: Cancel a subscription</option>
+      <option value="upload-file">Scenario: Upload and share a file</option>
+      <option value="invite-teammate">Scenario: Invite a teammate</option>
+      <option value="search-no-results">Scenario: Search with no results</option>
+      <option value="delete-account">Scenario: Delete an account</option>
+      <option value="multi-step-form">Scenario: Complete a multi-step form</option>
+      <option value="two-factor-setup">Scenario: Set up two-factor auth</option>
+      <option value="return-refund">Scenario: Return or refund a purchase</option>
+      <option value="change-email">Scenario: Change your account email</option>
+      <option value="enable-notifications">Scenario: Enable push notifications</option>
+      <option value="edit-profile-photo">Scenario: Update a profile photo</option>
+      <option value="trial-to-paid">Scenario: Upgrade trial to paid plan</option>
+      <option value="lost-connection">Scenario: Recover from a lost connection</option>
+      <option value="leave-a-review">Scenario: Leave a review after purchase</option>
+      <option value="wishlist-checkout">Scenario: Buy a wishlisted item</option>
+      <option value="notification-center">Scenario: Read & clear notifications</option>
+      <option value="forgot-username">Scenario: Recover a forgotten username</option>
+      <option value="session-expired">Scenario: Recover from a session timeout</option>
+      <option value="apply-coupon">Scenario: Apply a discount code</option>
+      <option value="export-data">Scenario: Export your account data</option>
+      <option value="team-invite-accept">Scenario: Accept a team invite</option>
+    </select>
+    <button class="stage-nav-btn" id="nextStageBtn" title="Next stage (→)">›</button>
+    <span class="stage-label" id="stageLabel">Stage 1 / 15</span>
+  </div>
+  <div class="toolbar-sep"></div>
+  <button class="tbtn primary" id="addNodeBtn" title="Add step (N)">+ Add step</button>
+  <button class="tbtn" id="connectBtn" title="Toggle connect mode (C)">Connect steps</button>
+  <div class="toolbar-sep"></div>
+  <button class="tbtn danger" id="clearBtn">Clear canvas</button>
+  <div class="toolbar-sep"></div>
+  <button class="tbtn" id="refBtn">Reveal reference flow</button>
+  <button class="tbtn" id="tutorialBtn" title="Replay tutorial (?)">🎓 Tutorial</button>
+  <span class="toolbar-hint" id="hintText">Drag steps to arrange · click a step's label to rename it</span>
+</div>
+
+<div class="shortcuts-bar" id="shortcutsBar">
+  <span class="shortcuts-bar-title">Shortcuts</span>
+  <span class="shortcut"><span class="kbd">N</span> Add step</span>
+  <span class="shortcut"><span class="kbd">C</span> Connect mode</span>
+  <span class="shortcut"><span class="kbd">Del</span> Delete selected</span>
+  <span class="shortcut"><span class="kbd">Esc</span> Cancel</span>
+  <span class="shortcut"><span class="kbd">←</span><span class="kbd">→</span> Prev / next stage</span>
+  <span class="shortcut"><span class="kbd">?</span> Tutorial</span>
+</div>
+
+<div class="stage" id="stage">
+  <div class="canvas-inner" id="canvasInner">
+    <svg class="edges" id="edgesSvg">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#1b6bff"></path>
+        </marker>
+      </defs>
+    </svg>
+    <div class="empty-hint" id="emptyHint"><b>Empty canvas</b>Click "+ Add step" to place your first screen, then connect them in order.</div>
+  </div>
+</div>
+
+<div class="reference-panel" id="refPanel">
+  <button class="ref-close" id="refClose">✕</button>
+  <div class="ref-header">
+    <h3>Reference flow</h3>
+    <p id="refIntro">One reasonable solution for "Reset your password." Compare it to what you built — yours doesn't need to match exactly, but check the branch for a wrong email.</p>
+  </div>
+  <div class="ref-body" id="refBody"></div>
+</div>
+
+<div class="tut-overlay" id="tutOverlay">
+  <div class="tut-tooltip" id="tutTooltip">
+    <div class="tut-step-count" id="tutStepCount">Step 1 of 8</div>
+    <h4 id="tutTitle">Welcome</h4>
+    <p id="tutText">…</p>
+    <div class="tut-actions">
+      <button class="tbtn" id="tutSkip">Skip</button>
+      <div style="flex:1"></div>
+      <button class="tbtn" id="tutBack">Back</button>
+      <button class="tbtn primary" id="tutNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'reset-password': {
+    hud: 'Scenario: <b>Map the flow for "Reset your password"</b> — from a logged-out user to being signed back in.',
+    seedLabel: 'Login screen',
+    refIntro: 'One reasonable solution for "Reset your password." Compare it to what you built — yours doesn\u2019t need to match exactly, but check the branch for a wrong email.',
+    ref: [
+      { text:'Login screen', note:'User clicks "Forgot password?"' },
+      { text:'Enter email screen' },
+      { text:'Email not recognized', branch:true, note:'Branch — show inline error, stay on screen' },
+      { text:'Check your email screen' },
+      { text:'Reset link opens — set new password' },
+      { text:'Confirmation screen' },
+      { text:'Signed in — back to dashboard', end:true }
+    ]
+  },
+  'onboarding': {
+    hud: 'Scenario: <b>Map the flow for "Onboard a new user"</b> — from landing page to first successful use.',
+    seedLabel: 'Landing page',
+    refIntro: 'One reasonable solution for onboarding a brand-new signup. Notice the branch for an expired verification link — easy to forget when mapping the happy path only.',
+    ref: [
+      { text:'Landing page', note:'User clicks "Sign up"' },
+      { text:'Enter email + password' },
+      { text:'Verify email screen', note:'"Check your inbox" shown' },
+      { text:'Verification link expired', branch:true, note:'Branch — offer "Resend email" action' },
+      { text:'Set up profile' },
+      { text:'Welcome / product tour' },
+      { text:'Dashboard — first use', end:true }
+    ]
+  },
+  'guest-checkout': {
+    hud: 'Scenario: <b>Map the flow for "Buy a ticket as a guest"</b> — no account required.',
+    seedLabel: 'Event page',
+    refIntro: 'One reasonable solution for a guest checkout. Notice the branch offering login instead of forcing every visitor through guest flow.',
+    ref: [
+      { text:'Event page', note:'User clicks "Buy tickets"' },
+      { text:'Select seats / quantity' },
+      { text:'Already has an account?', branch:true, note:'Branch — offer login instead of guest flow' },
+      { text:'Guest contact + payment info' },
+      { text:'Review order' },
+      { text:'Payment confirmation screen' },
+      { text:'Tickets emailed — order complete', end:true }
+    ]
+  },
+  'report-bug': {
+    hud: 'Scenario: <b>Map the flow for "Report a bug in-app"</b> — from anywhere in the product.',
+    seedLabel: 'Any screen in the app',
+    refIntro: 'One reasonable solution for in-app bug reporting. Notice the branch for skipping the screenshot — don\u2019t force a step that isn\u2019t essential.',
+    ref: [
+      { text:'Any screen in the app', note:'User opens Help menu' },
+      { text:'"Report a bug" option' },
+      { text:'Describe the issue' },
+      { text:'No screenshot attached', branch:true, note:'Branch — allow submit without one, just encourage it' },
+      { text:'Attach screenshot (optional)' },
+      { text:'Submit report' },
+      { text:'Confirmation toast — back to previous screen', end:true }
+    ]
+  },
+  'cancel-subscription': {
+    hud: 'Scenario: <b>Map the flow for "Cancel a subscription"</b> — from account settings to a confirmed cancellation.',
+    seedLabel: 'Account settings',
+    refIntro: 'One reasonable solution for a cancellation flow. Notice the retention branch — a real product moment, not just a straight path to "goodbye."',
+    ref: [
+      { text:'Account settings', note:'User clicks "Cancel subscription"' },
+      { text:'Reason survey (optional)' },
+      { text:'Offered 50% off for 3 months', branch:true, note:'Branch — accepting keeps them subscribed, skips to dashboard' },
+      { text:'Confirm cancellation' },
+      { text:'Access continues until period end' },
+      { text:'Cancellation confirmed', end:true }
+    ]
+  },
+  'upload-file': {
+    hud: 'Scenario: <b>Map the flow for "Upload and share a file"</b> — from an empty drive to a shared link.',
+    seedLabel: 'Drive home',
+    refIntro: 'One reasonable solution for uploading and sharing a file. Notice the branch for a file that\u2019s too large — an easy edge case to forget when mapping only the happy path.',
+    ref: [
+      { text:'Drive home', note:'User clicks "Upload"' },
+      { text:'Select file from device' },
+      { text:'File exceeds size limit', branch:true, note:'Branch — show error, offer compress or upgrade plan' },
+      { text:'Upload progress screen' },
+      { text:'File appears in list' },
+      { text:'Set sharing permissions' },
+      { text:'Link copied — shared', end:true }
+    ]
+  },
+  'invite-teammate': {
+    hud: 'Scenario: <b>Map the flow for "Invite a teammate"</b> — from workspace settings to a pending invite.',
+    seedLabel: 'Workspace settings',
+    refIntro: 'One reasonable solution for inviting a teammate. Notice the branch for an email that already has an account — skip the signup invite entirely.',
+    ref: [
+      { text:'Workspace settings', note:'User clicks "Invite people"' },
+      { text:'Enter email address' },
+      { text:'Email already has an account', branch:true, note:'Branch — add directly instead of sending a signup invite' },
+      { text:'Set role & permissions' },
+      { text:'Send invite' },
+      { text:'Pending invite shown in member list', end:true }
+    ]
+  },
+  'search-no-results': {
+    hud: 'Scenario: <b>Map the flow for "Search with no results"</b> — from a query to a recovered results list.',
+    seedLabel: 'Search bar',
+    refIntro: 'One reasonable solution for a zero-results state. Notice the branch — a dead end with no suggestions is one of the most common UX failures in search.',
+    ref: [
+      { text:'Search bar', note:'User types a query' },
+      { text:'Results list screen' },
+      { text:'Zero results found', branch:true, note:'Branch — suggest a spelling fix, broaden filters, or show popular items' },
+      { text:'User adjusts filters' },
+      { text:'Results reappear', end:true }
+    ]
+  },
+  'delete-account': {
+    hud: 'Scenario: <b>Map the flow for "Delete an account"</b> — from account settings to a confirmed deletion.',
+    seedLabel: 'Account settings',
+    refIntro: 'One reasonable solution for account deletion. Notice the re-authentication branch — a destructive action should confirm identity, not just intent.',
+    ref: [
+      { text:'Account settings', note:'User clicks "Delete account"' },
+      { text:'Warning: this cannot be undone' },
+      { text:'Wrong password entered', branch:true, note:'Branch — blocks deletion, shows inline error, stays on screen' },
+      { text:'Re-enter password to confirm' },
+      { text:'Final confirmation step' },
+      { text:'Account deleted', end:true }
+    ]
+  },
+  'multi-step-form': {
+    hud: 'Scenario: <b>Map the flow for "Complete a multi-step form"</b> — a 3-step wizard with validation.',
+    seedLabel: 'Step 1 of 3 — Basic info',
+    refIntro: 'One reasonable solution for a multi-step wizard. Notice the validation branch — a real form always needs a path back to itself, not just forward.',
+    ref: [
+      { text:'Step 1 of 3 — Basic info' },
+      { text:'Step 2 of 3 — Details' },
+      { text:'Validation error on Step 2', branch:true, note:'Branch — inline error, stays on step 2 until fixed' },
+      { text:'Step 3 of 3 — Review' },
+      { text:'Submit' },
+      { text:'Success screen', end:true }
+    ]
+  },
+  'two-factor-setup': {
+    hud: 'Scenario: <b>Map the flow for "Set up two-factor authentication"</b> — from security settings to an active 2FA method.',
+    seedLabel: 'Security settings',
+    refIntro: 'One reasonable solution for 2FA setup. Notice the backup-codes branch — what happens when a user loses their phone matters as much as the happy path.',
+    ref: [
+      { text:'Security settings', note:'User clicks "Enable 2FA"' },
+      { text:'Choose method — app or SMS' },
+      { text:'Scan QR code / enter phone' },
+      { text:'Enter verification code' },
+      { text:'Lost access to device', branch:true, note:'Branch — offer backup codes generated at setup' },
+      { text:'Save backup codes' },
+      { text:'2FA active', end:true }
+    ]
+  },
+  'return-refund': {
+    hud: 'Scenario: <b>Map the flow for "Return or refund a purchase"</b> — from order history to a resolved refund.',
+    seedLabel: 'Order history',
+    refIntro: 'One reasonable solution for a return flow. Notice the branch for an item that already shipped — the flow changes once something is physically in motion.',
+    ref: [
+      { text:'Order history', note:'User clicks "Return item"' },
+      { text:'Select reason for return' },
+      { text:'Item already shipped', branch:true, note:'Branch — show return shipping label instead of instant refund' },
+      { text:'Choose refund or store credit' },
+      { text:'Confirm return request' },
+      { text:'Refund processed', end:true }
+    ]
+  },
+  'change-email': {
+    hud: 'Scenario: <b>Map the flow for "Change your account email"</b> — from account settings to a verified new address.',
+    seedLabel: 'Account settings',
+    refIntro: 'One reasonable solution for changing an email address. Notice the branch for an email already in use elsewhere \u2014 don\u2019t let two accounts collide.',
+    ref: [
+      { text:'Account settings', note:'User clicks "Change email"' },
+      { text:'Enter new email + password' },
+      { text:'Email already in use', branch:true, note:'Branch — block the change, suggest password reset or support' },
+      { text:'Verify new email screen', note:'"Check your inbox" shown' },
+      { text:'New email confirmed', end:true }
+    ]
+  },
+  'enable-notifications': {
+    hud: 'Scenario: <b>Map the flow for "Enable push notifications"</b> — from a soft prompt to an active subscription.',
+    seedLabel: 'In-app soft prompt',
+    refIntro: 'One reasonable solution for a notification opt-in. Notice the branch for a denied browser permission \u2014 the flow can\u2019t force it, only explain and offer settings.',
+    ref: [
+      { text:'In-app soft prompt', note:'User clicks "Enable notifications"' },
+      { text:'Browser permission dialog' },
+      { text:'Permission denied', branch:true, note:'Branch — show a note and link to enable it in browser/OS settings' },
+      { text:'Permission granted' },
+      { text:'Notifications active', end:true }
+    ]
+  },
+  'edit-profile-photo': {
+    hud: 'Scenario: <b>Map the flow for "Update a profile photo"</b> — from account settings to a saved avatar.',
+    seedLabel: 'Account settings',
+    refIntro: 'One reasonable solution for updating a profile photo. Notice the branch for an unsupported file type \u2014 validate before the crop step, not after upload.',
+    ref: [
+      { text:'Account settings', note:'User clicks current avatar' },
+      { text:'Choose new photo from device' },
+      { text:'Unsupported file type', branch:true, note:'Branch — show inline error, stay on the file picker' },
+      { text:'Crop / adjust photo' },
+      { text:'Save changes' },
+      { text:'New avatar shown', end:true }
+    ]
+  },
+  'trial-to-paid': {
+    hud: 'Scenario: <b>Map the flow for "Upgrade from a free trial to a paid plan"</b> — from a trial-ending reminder to an active subscription.',
+    seedLabel: 'Trial-ending reminder',
+    refIntro: 'One reasonable solution for a trial-to-paid upgrade. Notice the branch for a declined payment \u2014 don\u2019t silently cancel their trial benefits, give them a way to fix it.',
+    ref: [
+      { text:'Trial-ending reminder', note:'Email or in-app banner, a few days before expiry' },
+      { text:'Choose a plan' },
+      { text:'Enter payment details' },
+      { text:'Payment declined', branch:true, note:'Branch — show the decline reason, let them retry with a different card' },
+      { text:'Payment confirmed' },
+      { text:'Plan upgraded', end:true }
+    ]
+  },
+  'lost-connection': {
+    hud: 'Scenario: <b>Map the flow for "Losing internet connection mid-action"</b> — from a normal task to safely recovering the user\u2019s work.',
+    seedLabel: 'User submits a form',
+    refIntro: 'One reasonable solution for handling a dropped connection. Notice the branch for reconnecting \u2014 don\u2019t make the user retype everything they already entered.',
+    ref: [
+      { text:'User submits a form' },
+      { text:'Connection lost mid-request', branch:true, note:'Branch — show an offline banner, keep the form data in place' },
+      { text:'Auto-retry when back online' },
+      { text:'Submission confirmed', end:true }
+    ]
+  },
+  'leave-a-review': {
+    hud: 'Scenario: <b>Map the flow for "Leave a review after a purchase"</b> — from a post-purchase prompt to a published review.',
+    seedLabel: 'Post-purchase prompt',
+    refIntro: 'One reasonable solution for a review flow. Notice the branch for a low star rating \u2014 many products route that to private support instead of a public review.',
+    ref: [
+      { text:'Post-purchase prompt', note:'"How was your order?" a few days after delivery' },
+      { text:'Select star rating' },
+      { text:'Rating is 1–2 stars', branch:true, note:'Branch — offer to contact support privately instead of posting publicly' },
+      { text:'Write review text' },
+      { text:'Review published', end:true }
+    ]
+  },
+  'wishlist-checkout': {
+    hud: 'Scenario: <b>Map the flow for "Buy an item you saved for later"</b> — from a wishlist to a completed order.',
+    seedLabel: 'Wishlist',
+    refIntro: 'One reasonable solution for checking out from a wishlist. Notice the branch for an item that sold out while it was saved \u2014 tell the user before checkout, not after.',
+    ref: [
+      { text:'Wishlist', note:'User clicks "Move to cart" on a saved item' },
+      { text:'Item out of stock', branch:true, note:'Branch — notify the user, offer "notify me when back in stock"' },
+      { text:'Item added to cart' },
+      { text:'Checkout' },
+      { text:'Order confirmed', end:true }
+    ]
+  },
+  'notification-center': {
+    hud: 'Scenario: <b>Map the flow for "Read and clear notifications"</b> — from a notification badge to an empty inbox.',
+    seedLabel: 'Notification badge',
+    refIntro: 'One reasonable solution for a notification center. Notice the branch for a notification linking to deleted content \u2014 the flow needs a graceful dead end, not a broken link.',
+    ref: [
+      { text:'Notification badge', note:'User clicks the bell icon' },
+      { text:'Notification list opens' },
+      { text:'Notification links to deleted content', branch:true, note:'Branch — show "this is no longer available" instead of a broken page' },
+      { text:'Notification opens relevant screen' },
+      { text:'Marked as read / cleared', end:true }
+    ]
+  },
+  'forgot-username': {
+    hud: 'Scenario: <b>Map the flow for "Recover a forgotten username or email"</b> — from the login screen to regaining account access.',
+    seedLabel: 'Login screen',
+    refIntro: 'One reasonable solution for username recovery. Notice the branch for no matching account \u2014 never confirm or deny whether an email exists, to protect user privacy.',
+    ref: [
+      { text:'Login screen', note:'User clicks "Forgot username?"' },
+      { text:'Enter recovery email' },
+      { text:'No matching account', branch:true, note:'Branch — show the same generic message either way, don\u2019t reveal if the email exists' },
+      { text:'Recovery email sent' },
+      { text:'User finds username, returns to login', end:true }
+    ]
+  },
+  'session-expired': {
+    hud: 'Scenario: <b>Map the flow for "Session expires mid-task"</b> — from an idle session to picking up right where the user left off.',
+    seedLabel: 'User is mid-task',
+    refIntro: 'One reasonable solution for an expired session. Notice the branch for unsaved changes \u2014 warn before booting the user out, don\u2019t just silently log them off.',
+    ref: [
+      { text:'User is mid-task' },
+      { text:'Session times out' },
+      { text:'Unsaved changes present', branch:true, note:'Branch — show a warning modal before redirecting to login' },
+      { text:'Re-enter credentials' },
+      { text:'Returned to the same task, work preserved', end:true }
+    ]
+  },
+  'apply-coupon': {
+    hud: 'Scenario: <b>Map the flow for "Apply a discount code at checkout"</b> — from the cart to an updated total.',
+    seedLabel: 'Cart / checkout',
+    refIntro: 'One reasonable solution for a coupon flow. Notice the branch for an expired code \u2014 tell the user exactly why it failed, not just "invalid code."',
+    ref: [
+      { text:'Cart / checkout', note:'User clicks "Have a code?"' },
+      { text:'Enter coupon code' },
+      { text:'Code expired', branch:true, note:'Branch — show the specific reason (expired vs. invalid vs. already used)' },
+      { text:'Discount applied' },
+      { text:'Updated total shown', end:true }
+    ]
+  },
+  'export-data': {
+    hud: 'Scenario: <b>Map the flow for "Export your account data"</b> — from a privacy settings request to a downloadable file.',
+    seedLabel: 'Privacy settings',
+    refIntro: 'One reasonable solution for a data export request. Notice the branch for a large dataset \u2014 some exports can\u2019t be instant, so the flow needs a "we\u2019ll email you" path.',
+    ref: [
+      { text:'Privacy settings', note:'User clicks "Export my data"' },
+      { text:'Confirm request' },
+      { text:'Large dataset — takes time', branch:true, note:'Branch — tell the user it will arrive by email instead of downloading instantly' },
+      { text:'Export ready' },
+      { text:'File downloaded', end:true }
+    ]
+  },
+  'team-invite-accept': {
+    hud: 'Scenario: <b>Map the flow for "Accept a team invite as a new user"</b> — from an email invite to joining an existing workspace.',
+    seedLabel: 'Invite email',
+    refIntro: 'One reasonable solution for accepting a team invite. Notice the branch for an already-existing account with that email \u2014 link to the existing account instead of creating a duplicate.',
+    ref: [
+      { text:'Invite email', note:'User clicks "Join workspace"' },
+      { text:'Create account' },
+      { text:'Email already has an account', branch:true, note:'Branch — offer to log in and link that account to the workspace instead' },
+      { text:'Account created' },
+      { text:'Joined the workspace', end:true }
+    ]
+  }
+};
+
+const stage = document.getElementById('stage');
+const canvasInner = document.getElementById('canvasInner');
+const svg = document.getElementById('edgesSvg');
+const emptyHint = document.getElementById('emptyHint');
+
+let nodes = [];
+let edges = [];
+let nodeIdSeq = 1;
+let connectMode = false;
+let pendingFrom = null;
+let dragState = null;
+let currentScenario = 'reset-password';
+let selectedNodeId = null;
+
+const STAGE_IDS = Object.keys(SCENARIOS);
+let currentStageIndex = STAGE_IDS.indexOf(currentScenario);
+
+function uid(){ return 'n' + (nodeIdSeq++); }
+
+function selectNode(id){
+  clearSelection();
+  selectedNodeId = id;
+  const el = document.querySelector(`.node[data-id="${id}"]`);
+  if(el) el.classList.add('selected');
+}
+
+function clearSelection(){
+  if(selectedNodeId){
+    const el = document.querySelector(`.node[data-id="${selectedNodeId}"]`);
+    if(el) el.classList.remove('selected');
+  }
+  selectedNodeId = null;
+}
+
+function updateStageUI(){
+  document.getElementById('stageLabel').textContent = `Stage ${currentStageIndex + 1} / ${STAGE_IDS.length}`;
+  document.getElementById('prevStageBtn').disabled = currentStageIndex <= 0;
+  document.getElementById('nextStageBtn').disabled = currentStageIndex >= STAGE_IDS.length - 1;
+}
+
+function stepStage(delta){
+  const newIndex = currentStageIndex + delta;
+  if(newIndex < 0 || newIndex >= STAGE_IDS.length) return;
+  const hasWork = nodes.length > 1 || edges.length > 0;
+  if(hasWork && !confirm('Switching scenarios clears your current canvas. Continue?')) return;
+  currentStageIndex = newIndex;
+  const id = STAGE_IDS[currentStageIndex];
+  document.getElementById('scenarioSelect').value = id;
+  loadScenario(id);
+  updateStageUI();
+}
+
+function renderReferencePanel(id){
+  const s = SCENARIOS[id];
+  document.getElementById('refIntro').textContent = s.refIntro;
+  const body = document.getElementById('refBody');
+  body.innerHTML = '';
+  s.ref.forEach((node, i) => {
+    if(i > 0){
+      const arrow = document.createElement('div');
+      arrow.className = 'ref-arrow';
+      arrow.textContent = '↓';
+      body.appendChild(arrow);
+    }
+    const el = document.createElement('div');
+    el.className = 'ref-node' + (node.branch ? ' branch' : '') + (node.end ? ' start' : '');
+    el.textContent = node.text;
+    if(node.note){
+      const note = document.createElement('div');
+      note.className = 'ref-note';
+      note.textContent = node.note;
+      el.appendChild(note);
+    }
+    body.appendChild(el);
+  });
+}
+
+function loadScenario(id){
+  const s = SCENARIOS[id];
+  currentScenario = id;
+  document.getElementById('hudScenario').innerHTML = s.hud;
+  renderReferencePanel(id);
+  document.getElementById('refPanel').classList.remove('show');
+
+  nodes = []; edges = []; nodeIdSeq = 1; pendingFrom = null; selectedNodeId = null;
+  document.querySelectorAll('.node').forEach(n => n.remove());
+  drawEdges();
+  addNode(60, 60, s.seedLabel);
+}
+
+document.getElementById('scenarioSelect').addEventListener('change', (e) => {
+  const hasWork = nodes.length > 1 || edges.length > 0;
+  if(hasWork && !confirm('Switching scenarios clears your current canvas. Continue?')){
+    e.target.value = currentScenario;
+    return;
+  }
+  loadScenario(e.target.value);
+  currentStageIndex = STAGE_IDS.indexOf(e.target.value);
+  updateStageUI();
+});
+
+document.getElementById('prevStageBtn').addEventListener('click', () => stepStage(-1));
+document.getElementById('nextStageBtn').addEventListener('click', () => stepStage(1));
+
+function addNode(x, y, label){
+  const n = { id: uid(), x, y, label: label || 'New step' };
+  nodes.push(n);
+  renderNode(n);
+  toggleEmptyHint();
+  return n;
+}
+
+function toggleEmptyHint(){
+  emptyHint.style.display = nodes.length ? 'none' : 'block';
+}
+
+function renderNode(n){
+  const el = document.createElement('div');
+  el.className = 'node' + (n.id === 'n1' ? ' start' : '');
+  el.style.left = n.x + 'px';
+  el.style.top = n.y + 'px';
+  el.dataset.id = n.id;
+  el.innerHTML = `
+    <div class="node-head">
+      <div class="node-label" contenteditable="true" spellcheck="false">${n.label}</div>
+      <button class="node-del" title="Delete step">✕</button>
+    </div>
+    <div class="node-tag">step ${n.id.replace('n','')}</div>
+    <div class="node-port"></div>
+  `;
+  canvasInner.appendChild(el);
+
+  const labelEl = el.querySelector('.node-label');
+  labelEl.addEventListener('blur', () => {
+    n.label = labelEl.textContent.trim() || 'Untitled step';
+  });
+  labelEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); labelEl.blur(); } });
+
+  el.querySelector('.node-del').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    removeNode(n.id);
+  });
+
+  el.addEventListener('mousedown', (e) => {
+    if(e.target.closest('.node-del') || e.target.closest('.node-label')) return;
+    if(connectMode) return;
+    selectNode(n.id);
+    const rect = el.getBoundingClientRect();
+    dragState = { id: n.id, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+    el.classList.add('dragging');
+  });
+
+  el.addEventListener('click', (e) => {
+    if(!connectMode) return;
+    if(e.target.closest('.node-del')) return;
+    handleConnectClick(n.id, el);
+  });
+}
+
+function handleConnectClick(id, el){
+  if(!pendingFrom){
+    pendingFrom = id;
+    el.classList.add('pending');
+    document.getElementById('hintText').textContent = 'Now click the step this flow leads to…';
+  } else if(pendingFrom === id){
+    el.classList.remove('pending');
+    pendingFrom = null;
+    document.getElementById('hintText').textContent = 'Click a step to start a connection.';
+  } else {
+    edges.push({ from: pendingFrom, to: id });
+    document.querySelector(`.node[data-id="${pendingFrom}"]`).classList.remove('pending');
+    pendingFrom = null;
+    document.getElementById('hintText').textContent = 'Connected. Click a step to start another connection.';
+    drawEdges();
+  }
+}
+
+function removeNode(id){
+  nodes = nodes.filter(n => n.id !== id);
+  edges = edges.filter(e => e.from !== id && e.to !== id);
+  const el = document.querySelector(`.node[data-id="${id}"]`);
+  if(el) el.remove();
+  if(selectedNodeId === id) selectedNodeId = null;
+  drawEdges();
+  toggleEmptyHint();
+}
+
+function nodeCenter(n, side){
+  const w = 168, hApprox = 64;
+  if(side === 'bottom') return { x: n.x + w/2, y: n.y + hApprox };
+  if(side === 'top') return { x: n.x + w/2, y: n.y };
+  return { x: n.x + w/2, y: n.y + hApprox/2 };
+}
+
+function drawEdges(){
+  const paths = edges.map(e => {
+    const from = nodes.find(n => n.id === e.from);
+    const to = nodes.find(n => n.id === e.to);
+    if(!from || !to) return '';
+    const p1 = nodeCenter(from, 'bottom');
+    const p2 = nodeCenter(to, 'top');
+    const midY = (p1.y + p2.y) / 2;
+    return `<path d="M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}"
+              fill="none" stroke="#1b6bff" stroke-width="2" marker-end="url(#arrowhead)" />`;
+  }).join('');
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#1b6bff"></path>
+      </marker>
+    </defs>${paths}`;
+}
+
+document.addEventListener('mousemove', (e) => {
+  if(!dragState) return;
+  const stageRect = canvasInner.getBoundingClientRect();
+  const n = nodes.find(n => n.id === dragState.id);
+  n.x = Math.max(0, e.clientX - stageRect.left - dragState.offsetX);
+  n.y = Math.max(0, e.clientY - stageRect.top - dragState.offsetY);
+  const el = document.querySelector(`.node[data-id="${n.id}"]`);
+  el.style.left = n.x + 'px';
+  el.style.top = n.y + 'px';
+  drawEdges();
+});
+
+document.addEventListener('mouseup', () => {
+  if(dragState){
+    const el = document.querySelector(`.node[data-id="${dragState.id}"]`);
+    if(el) el.classList.remove('dragging');
+  }
+  dragState = null;
+});
+
+document.getElementById('addNodeBtn').addEventListener('click', () => {
+  const count = nodes.length;
+  const x = 60 + (count % 4) * 210;
+  const y = 60 + Math.floor(count / 4) * 150;
+  addNode(x, y);
+});
+
+document.getElementById('connectBtn').addEventListener('click', () => {
+  connectMode = !connectMode;
+  const btn = document.getElementById('connectBtn');
+  btn.classList.toggle('active', connectMode);
+  btn.textContent = connectMode ? 'Connecting…' : 'Connect steps';
+  document.getElementById('hintText').textContent = connectMode
+    ? 'Click a step to start a connection.'
+    : 'Drag steps to arrange · click a step\'s label to rename it';
+  if(!connectMode && pendingFrom){
+    const el = document.querySelector(`.node[data-id="${pendingFrom}"]`);
+    if(el) el.classList.remove('pending');
+    pendingFrom = null;
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if(!confirm('Clear everything on the canvas?')) return;
+  nodes = []; edges = []; nodeIdSeq = 1; pendingFrom = null; selectedNodeId = null;
+  document.querySelectorAll('.node').forEach(n => n.remove());
+  drawEdges();
+  toggleEmptyHint();
+});
+
+document.getElementById('stage').addEventListener('mousedown', (e) => {
+  if(e.target.id === 'stage' || e.target.id === 'canvasInner'){
+    clearSelection();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  const tag = e.target.tagName;
+  if(e.target.isContentEditable || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  if(document.getElementById('tutOverlay').classList.contains('show')){
+    if(e.key === 'Escape') endTutorial();
+    return;
+  }
+
+  if(e.key === 'n' || e.key === 'N'){
+    e.preventDefault();
+    document.getElementById('addNodeBtn').click();
+  } else if(e.key === 'c' || e.key === 'C'){
+    e.preventDefault();
+    document.getElementById('connectBtn').click();
+  } else if(e.key === 'Delete' || e.key === 'Backspace'){
+    if(selectedNodeId){
+      e.preventDefault();
+      removeNode(selectedNodeId);
+    }
+  } else if(e.key === 'Escape'){
+    if(connectMode) document.getElementById('connectBtn').click();
+    clearSelection();
+  } else if(e.key === 'ArrowRight'){
+    stepStage(1);
+  } else if(e.key === 'ArrowLeft'){
+    stepStage(-1);
+  } else if(e.key === '?'){
+    e.preventDefault();
+    startTutorial();
+  }
+});
+
+const TUTORIAL_STEPS = [
+  { target: null, title: 'Welcome to Flow Builder', text: 'Each scenario is a real product moment. Your job: map how a user gets from start to finish, one step at a time.' },
+  { target: '#addNodeBtn', title: 'Add a step', text: 'Click "+ Add step" (or press N) to drop a new screen onto the canvas.', placement: 'bottom' },
+  { target: '.node[data-id="n1"]', title: 'Arrange your steps', text: 'Drag steps to position them anywhere on the canvas. Click a step\u2019s label to rename it.', placement: 'right' },
+  { target: '#connectBtn', title: 'Connect steps', text: 'Toggle connect mode (or press C), then click one step and the step it leads to, to draw an arrow between them.', placement: 'bottom' },
+  { target: '#refBtn', title: 'Check your work', text: 'Reveal the reference flow any time to compare it with what you\u2019ve built \u2014 yours doesn\u2019t need to match exactly.', placement: 'bottom' },
+  { target: '#clearBtn', title: 'Start over', text: 'Clear the canvas to try the scenario again from scratch.', placement: 'bottom' },
+  { target: '#stageNav', title: 'Move between stages', text: 'Use the \u2039 \u203a arrows (or \u2190 \u2192) to work through every challenge in order, or jump straight to one with the dropdown.', placement: 'bottom' },
+  { target: '#shortcutsBar', title: 'Keyboard shortcuts', text: 'These speed things up once you\u2019re used to the tool. Select a step and press Delete to remove it. Press ? any time to replay this tutorial.', placement: 'top' }
+];
+let tutIndex = 0;
+
+function clearTutHighlight(){
+  document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
+}
+
+function positionTooltip(rect, placement){
+  const tooltip = document.getElementById('tutTooltip');
+  const pad = 14;
+  const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+  let top, left;
+  if(!rect){
+    top = window.innerHeight / 2 - th / 2;
+    left = window.innerWidth / 2 - tw / 2;
+  } else if(placement === 'right'){
+    top = rect.top + rect.height / 2 - th / 2;
+    left = rect.right + pad;
+  } else if(placement === 'top'){
+    top = rect.top - th - pad;
+    left = rect.left + rect.width / 2 - tw / 2;
+  } else {
+    top = rect.bottom + pad;
+    left = rect.left + rect.width / 2 - tw / 2;
+  }
+  left = Math.max(12, Math.min(left, window.innerWidth - tw - 12));
+  top = Math.max(12, Math.min(top, window.innerHeight - th - 12));
+  tooltip.style.top = top + 'px';
+  tooltip.style.left = left + 'px';
+}
+
+function showTutStep(i){
+  clearTutHighlight();
+  const step = TUTORIAL_STEPS[i];
+  document.getElementById('tutStepCount').textContent = `Step ${i + 1} of ${TUTORIAL_STEPS.length}`;
+  document.getElementById('tutTitle').textContent = step.title;
+  document.getElementById('tutText').textContent = step.text;
+  document.getElementById('tutBack').style.visibility = i === 0 ? 'hidden' : 'visible';
+  document.getElementById('tutNext').textContent = i === TUTORIAL_STEPS.length - 1 ? 'Start building' : 'Next';
+
+  const targetEl = step.target ? document.querySelector(step.target) : null;
+  if(targetEl) targetEl.classList.add('tut-highlight');
+  requestAnimationFrame(() => positionTooltip(targetEl ? targetEl.getBoundingClientRect() : null, step.placement));
+}
+
+function startTutorial(){
+  tutIndex = 0;
+  document.getElementById('tutOverlay').classList.add('show');
+  showTutStep(0);
+}
+
+function endTutorial(){
+  document.getElementById('tutOverlay').classList.remove('show');
+  clearTutHighlight();
+}
+
+document.getElementById('tutNext').addEventListener('click', () => {
+  if(tutIndex >= TUTORIAL_STEPS.length - 1){ endTutorial(); return; }
+  tutIndex++;
+  showTutStep(tutIndex);
+});
+document.getElementById('tutBack').addEventListener('click', () => {
+  if(tutIndex > 0){ tutIndex--; showTutStep(tutIndex); }
+});
+document.getElementById('tutSkip').addEventListener('click', endTutorial);
+document.getElementById('tutorialBtn').addEventListener('click', startTutorial);
+
+document.getElementById('refBtn').addEventListener('click', () => {
+  document.getElementById('refPanel').classList.add('show');
+});
+document.getElementById('refClose').addEventListener('click', () => {
+  document.getElementById('refPanel').classList.remove('show');
+});
+
+// initialize with the first scenario
+renderReferencePanel(currentScenario);
+addNode(60, 60, SCENARIOS[currentScenario].seedLabel);
+updateStageUI();
+startTutorial();
+</script>
+
+</body>
+</html>
