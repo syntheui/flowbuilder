@@ -83,6 +83,21 @@
   .hud-scenario{ font-size:12.5px; color:#a9aab0; max-width:420px; text-align:right; }
   .hud-scenario b{ color:#fff; }
 
+  .hud-points{
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:13px;
+    background:#2a2b2f; color:#fff; padding:6px 12px; border-radius:20px;
+    display:flex; align-items:center; gap:6px; border:1px solid #3a3b40;
+    flex-shrink:0; transition:background .2s, border-color .2s, color .2s;
+  }
+  .hud-points b{ font-size:15px; }
+  .hud-points .hud-points-budget{ color:#8d8e94; font-weight:500; font-size:11px; }
+  .hud-points.low{ background:rgba(227,64,45,.18); border-color:var(--accent-red); }
+  .hud-points.low b{ color:#ff6a55; }
+  .hud-points.zero{ background:rgba(31,156,119,.18); border-color:var(--accent-green); }
+  .hud-points.zero b{ color:#3fd39d; }
+  .hud-points.pulse{ animation:pointsPop .35s ease; }
+  @keyframes pointsPop{ 0%{ transform:scale(1);} 45%{ transform:scale(1.15);} 100%{ transform:scale(1);} }
+
   .toolbar{
     background:#fff;
     border-bottom:1px solid var(--panel-border);
@@ -172,6 +187,8 @@
   }
   .toast-undo:hover{ background:rgba(255,255,255,.1); }
   .node.start{ border-color:var(--ink); }
+  .node.error{ border-color:var(--accent-red); background:#fef4f3; box-shadow:0 0 0 3px rgba(227,64,45,.12); }
+  .node.error .node-tag{ color:var(--accent-red); font-weight:600; }
   .node-head{
     padding:9px 10px 5px;
     display:flex; align-items:flex-start; justify-content:space-between; gap:6px;
@@ -186,6 +203,12 @@
     padding:2px 4px; border-radius:4px; flex-shrink:0;
   }
   .node-del:hover{ color:var(--accent-red); background:#fbe2df; }
+  .node-error-toggle{
+    all:unset; cursor:pointer; color:var(--ink-faint); font-size:12px; line-height:1;
+    padding:2px 4px; border-radius:4px; flex-shrink:0;
+  }
+  .node-error-toggle:hover{ color:var(--accent-red); background:#fbe2df; }
+  .node-error-toggle.active{ color:var(--accent-red); }
   .node-tag{
     font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint);
     padding:0 10px 9px;
@@ -375,6 +398,7 @@
 
 <div class="hud">
   <div class="hud-title"><span class="stamp-mark">FLOW</span><h1>User Flow Builder</h1></div>
+  <div class="hud-points" id="hudPoints" title="Steps left in this mission's budget — spend a point adding a step, earn one back by connecting two steps">Points <b id="hudPointsVal">0</b><span class="hud-points-budget" id="hudPointsBudget"></span></div>
   <div class="hud-scenario" id="hudScenario">Scenario: <b>Map the flow for "Reset your password"</b> — from a logged-out user to being signed back in.</div>
 </div>
 
@@ -823,6 +847,7 @@ let dragState = null;
 let wireDrag = null;
 let currentScenario = 'reset-password';
 let selectedNodeId = null;
+let pointsBudget = 0;
 
 const STAGE_IDS = Object.keys(SCENARIOS);
 let currentStageIndex = STAGE_IDS.indexOf(currentScenario);
@@ -936,6 +961,7 @@ function renderReferencePanel(id){
 function loadScenario(id){
   const s = SCENARIOS[id];
   currentScenario = id;
+  pointsBudget = s.ref.length;
   document.getElementById('hudScenario').innerHTML = s.hud;
   renderReferencePanel(id);
   document.getElementById('refPanel').classList.remove('show');
@@ -964,15 +990,51 @@ document.getElementById('prevStageBtn').addEventListener('click', () => stepStag
 document.getElementById('nextStageBtn').addEventListener('click', () => stepStage(1));
 
 function addNode(x, y, label){
-  const n = { id: uid(), x, y, label: label || 'New step' };
+  const n = { id: uid(), x, y, label: label || 'New step', isError: false };
   nodes.push(n);
   renderNode(n);
   toggleEmptyHint();
+  updatePoints();
   return n;
 }
 
 function toggleEmptyHint(){
   emptyHint.style.display = nodes.length ? 'none' : 'block';
+}
+
+function updatePoints(){
+  // Budget = number of steps in this mission's reference flow.
+  // Every step placed — including the starting step — spends one point.
+  // Deleting a step gives it back. Hits zero → no more steps can be added.
+  const remaining = pointsBudget - nodes.length;
+  const el = document.getElementById('hudPoints');
+  const valEl = document.getElementById('hudPointsVal');
+  const budgetEl = document.getElementById('hudPointsBudget');
+  if(!el || !valEl || !budgetEl) return;
+  const prev = valEl.textContent;
+  valEl.textContent = remaining;
+  budgetEl.textContent = `/ ${pointsBudget} steps`;
+  el.classList.toggle('low', remaining < 0);
+  el.classList.toggle('zero', remaining === 0);
+  if(prev !== String(remaining)){
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  }
+
+  const addBtn = document.getElementById('addNodeBtn');
+  if(addBtn){
+    const maxedOut = remaining <= 0;
+    addBtn.disabled = maxedOut;
+    addBtn.classList.toggle('disabled', maxedOut);
+  }
+}
+
+function updateNodeErrorUI(n, el){
+  el.classList.toggle('error', !!n.isError);
+  el.querySelector('.node-error-toggle').classList.toggle('active', !!n.isError);
+  el.querySelector('.node-tag').textContent =
+    `step ${n.id.replace('n','')}` + (n.isError ? ' · error state' : '');
 }
 
 function renderNode(n){
@@ -984,12 +1046,14 @@ function renderNode(n){
   el.innerHTML = `
     <div class="node-head">
       <div class="node-label" contenteditable="true" spellcheck="false">${n.label}</div>
+      <button class="node-error-toggle" title="Mark as error / edge-case state">⚠</button>
       <button class="node-del" title="Delete step">✕</button>
     </div>
     <div class="node-tag">step ${n.id.replace('n','')}</div>
     <div class="node-port"></div>
   `;
   canvasInner.appendChild(el);
+  updateNodeErrorUI(n, el);
 
   const labelEl = el.querySelector('.node-label');
   labelEl.addEventListener('blur', () => {
@@ -1002,8 +1066,14 @@ function renderNode(n){
     removeNode(n.id);
   });
 
+  el.querySelector('.node-error-toggle').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    n.isError = !n.isError;
+    updateNodeErrorUI(n, el);
+  });
+
   el.addEventListener('mousedown', (e) => {
-    if(e.target.closest('.node-del') || e.target.closest('.node-label')) return;
+    if(e.target.closest('.node-del') || e.target.closest('.node-error-toggle') || e.target.closest('.node-label')) return;
     if(connectMode) return;
     selectNode(n.id);
     const rect = el.getBoundingClientRect();
@@ -1013,7 +1083,7 @@ function renderNode(n){
 
   el.addEventListener('click', (e) => {
     if(!connectMode) return;
-    if(e.target.closest('.node-del')) return;
+    if(e.target.closest('.node-del') || e.target.closest('.node-error-toggle')) return;
     handleConnectClick(n.id, el);
   });
 
@@ -1106,8 +1176,10 @@ function drawEdges(){
         pushHistory({ type: 'delete-edge', edge: removedEdge, index: idx });
         showToast('Connection removed', true);
       }
+      updatePoints();
     });
   });
+  updatePoints();
 }
 
 document.addEventListener('mousemove', (e) => {
@@ -1638,6 +1710,7 @@ document.getElementById('checkToRefBtn').addEventListener('click', () => {
 
 // initialize with the first scenario
 renderReferencePanel(currentScenario);
+pointsBudget = SCENARIOS[currentScenario].ref.length;
 addNode(60, 60, SCENARIOS[currentScenario].seedLabel);
 updateStageUI();
 startTutorial();
